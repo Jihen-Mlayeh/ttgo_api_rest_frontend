@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "412900967146",
+    "firebase_url": "https://ttgo-iot-project-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "ttgo-iot-project",
+    "storage_bucket": "ttgo-iot-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:412900967146:android:479ea8acdb6f0a8c668d93",
+        "android_client_info": {
+          "package_name": "com.example.ttgo_iot_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwHnem3dmzFgdE3geTJ8C64Mzo33BNaR4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
