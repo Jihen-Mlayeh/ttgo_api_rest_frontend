@@ -6,6 +6,7 @@ import '../../../providers/settings_provider.dart';
 import '../../widgets/temperature_card.dart';
 import '../../widgets/light_card.dart';
 import '../../widgets/led_control_card.dart';
+import '../history/history_screen.dart';
 import '../sensors/sensors_screen.dart';
 import '../led_control/led_control_screen.dart';
 import '../settings/settings_screen.dart';
@@ -121,6 +122,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               }
               return const SizedBox.shrink();
             },
+          ),
+
+          // ✅ NOUVEAU : Bouton History
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const HistoryScreen(),
+                ),
+              );
+            },
+            tooltip: 'Historique',
           ),
 
           // Bouton Settings
