@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/led_provider.dart';
+import '../../../providers/sensor_provider.dart';
 import '../../../core/constants/colors.dart';
 
 class LedControlScreen extends StatelessWidget {
@@ -8,8 +9,12 @@ class LedControlScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LedProvider>(
-      builder: (context, provider, child) {
+    return Consumer2<LedProvider, SensorProvider>(
+      builder: (context, ledProvider, sensorProvider, child) {
+        // ✅ Lire l'état RÉEL depuis l'ESP32
+        final isOn = sensorProvider.currentData?.ledState ?? ledProvider.isOn;
+        final isLoading = ledProvider.isLoading;
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -25,11 +30,11 @@ class LedControlScreen extends StatelessWidget {
                         width: 120,
                         height: 120,
                         decoration: BoxDecoration(
-                          color: provider.isOn
+                          color: isOn
                               ? Colors.yellow
                               : Colors.grey[300],
                           shape: BoxShape.circle,
-                          boxShadow: provider.isOn
+                          boxShadow: isOn
                               ? [
                             BoxShadow(
                               color: Colors.yellow.withOpacity(0.6),
@@ -42,12 +47,12 @@ class LedControlScreen extends StatelessWidget {
                         child: Icon(
                           Icons.lightbulb,
                           size: 60,
-                          color: provider.isOn ? Colors.white : Colors.grey[600],
+                          color: isOn ? Colors.white : Colors.grey[600],
                         ),
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        provider.isOn ? 'LED Allumée' : 'LED Éteinte',
+                        isOn ? 'LED Allumée' : 'LED Éteinte',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -79,8 +84,8 @@ class LedControlScreen extends StatelessWidget {
                         'Allumer',
                         Icons.power_settings_new,
                         Colors.green,
-                            () => provider.turnOn(),
-                        provider.isLoading,
+                            () => ledProvider.turnOn(),
+                        isLoading,
                       ),
                       const SizedBox(height: 12),
                       _buildControlButton(
@@ -88,8 +93,8 @@ class LedControlScreen extends StatelessWidget {
                         'Éteindre',
                         Icons.power_settings_new,
                         Colors.red,
-                            () => provider.turnOff(),
-                        provider.isLoading,
+                            () => ledProvider.turnOff(),
+                        isLoading,
                       ),
                       const SizedBox(height: 12),
                       _buildControlButton(
@@ -97,8 +102,8 @@ class LedControlScreen extends StatelessWidget {
                         'Basculer',
                         Icons.sync,
                         AppColors.primary,
-                            () => provider.toggle(),
-                        provider.isLoading,
+                            () => ledProvider.toggle(),
+                        isLoading,
                       ),
                     ],
                   ),

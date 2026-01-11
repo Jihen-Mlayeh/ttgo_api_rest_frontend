@@ -6,11 +6,11 @@ import '../data/services/firebase_service.dart';
 import '../data/services/mock_api_service.dart';
 class SensorProvider with ChangeNotifier {
   // POUR TEST SANS ESP32 :
-  final MockApiService _apiService = MockApiService();
+  // final MockApiService _apiService = MockApiService();
 
 // POUR VRAI ESP32 :
 // final ApiService _apiService = ApiService();
-  //final ApiService _apiService = ApiService();
+  final ApiService _apiService = ApiService();
   final FirebaseService _firebaseService = FirebaseService();
 
   SensorData? _currentData;
@@ -35,7 +35,7 @@ class SensorProvider with ChangeNotifier {
     _timer?.cancel();
   }
 
-  // Récupérer les données
+
   Future<void> fetchSensorData() async {
     try {
       _error = null;
@@ -43,10 +43,16 @@ class SensorProvider with ChangeNotifier {
       _currentData = data;
       _fetchCount++;
 
-      // Sauvegarder dans Firebase toutes les 5 secondes (1 fois sur 3 si polling = 2s)
-      if (_fetchCount % 3 == 0) {
+      // ✅ SYNCHRONISER L'ÉTAT LED
+      // Note: On ne peut pas accéder directement au provider ici
+      // On va stocker l'état dans SensorProvider et le lire depuis les widgets
+
+      // Sauvegarder dans Firebase
+      try {
         await _firebaseService.saveSensorData(data);
         await _firebaseService.addToHistory(data);
+      } catch (firebaseError) {
+        print('❌ Erreur Firebase: $firebaseError');
       }
 
       notifyListeners();

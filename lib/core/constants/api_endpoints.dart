@@ -1,6 +1,6 @@
 class ApiEndpoints {
   // Base URL (sera changée dynamiquement)
-  static String baseUrl = 'http://192.168.1.100';
+  static String baseUrl = 'http://10.192.183.166';
 
   // Endpoints
   static String get sensors => '$baseUrl/sensors';

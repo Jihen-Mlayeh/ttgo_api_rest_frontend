@@ -10,6 +10,22 @@ class LedProvider with ChangeNotifier {
   bool get isOn => _isOn;
   bool get isLoading => _isLoading;
 
+  // ✅ NOUVEAU : Récupérer l'état depuis l'ESP32
+  Future<void> fetchLedState() async {
+    try {
+      final data = await _apiService.getSensorData();
+      // L'API /status retourne l'état LED dans actuators.led
+      // On doit parser la réponse pour extraire l'état
+
+      // Pour l'instant, on va ajouter une méthode dans ApiService
+      final state = await _apiService.getLedState();
+      _isOn = state;
+      notifyListeners();
+    } catch (e) {
+      print('Erreur lecture état LED: $e');
+    }
+  }
+
   Future<void> turnOn() async {
     _isLoading = true;
     notifyListeners();
@@ -18,7 +34,7 @@ class LedProvider with ChangeNotifier {
       await _apiService.setLedState(true);
       _isOn = true;
     } catch (e) {
-      // Gérer l'erreur
+      print('Erreur LED ON: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -33,7 +49,7 @@ class LedProvider with ChangeNotifier {
       await _apiService.setLedState(false);
       _isOn = false;
     } catch (e) {
-      // Gérer l'erreur
+      print('Erreur LED OFF: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -48,15 +64,10 @@ class LedProvider with ChangeNotifier {
       await _apiService.toggleLed();
       _isOn = !_isOn;
     } catch (e) {
-      // Gérer l'erreur
+      print('Erreur LED TOGGLE: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  void setState(bool state) {
-    _isOn = state;
-    notifyListeners();
   }
 }
