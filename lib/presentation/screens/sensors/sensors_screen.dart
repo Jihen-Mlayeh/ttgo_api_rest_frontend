@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/sensor_provider.dart';
 import '../../../data/services/firebase_service.dart';
 import '../../../data/models/sensor_data.dart';
+import '../../widgets/shimmer_loading.dart';
 import '../../widgets/thermometer_widget.dart';
 import '../../widgets/light_gauge_widget.dart';
 import '../../widgets/temperature_chart.dart';
@@ -45,31 +46,15 @@ class _SensorsScreenState extends State<SensorsScreen> {
             final data = provider.currentData;
 
             if (data == null) {
-              return Center(
+              return Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    const Text('Chargement des données...'),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        context.read<SensorProvider>().fetchSensorData();
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Réessayer'),
-                    ),
+                    ShimmerCardLoading(height: 400),
                     const SizedBox(height: 12),
-                    if (provider.error != null)
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          'Erreur: ${provider.error}',
-                          style: const TextStyle(color: Colors.red),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+                    ShimmerCardLoading(height: 400),
+                    const SizedBox(height: 12),
+                    ShimmerCardLoading(height: 200),
                   ],
                 ),
               );

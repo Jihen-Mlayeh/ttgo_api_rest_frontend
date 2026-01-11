@@ -4,6 +4,7 @@ import '../../../providers/settings_provider.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/api_endpoints.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../widgets/success_animation.dart';
 import '../connection/connection_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -282,13 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: () async {
                   await settings.applyThresholds();
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Seuils appliqués avec succès !'),
-                        backgroundColor: Colors.green,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    showSuccessDialog(context, 'Seuils appliqués avec succès !');
                   }
                 },
                 icon: const Icon(Icons.check),

@@ -13,83 +13,89 @@ class TemperatureCard extends StatelessWidget {
       builder: (context, provider, child) {
         final temp = provider.currentData?.temperature ?? 0.0;
 
-        return Card(
-          child: InkWell(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const SensorsScreen(),
-                ),
-              );
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+        return Hero(
+          tag: 'temperature-card',
+          child: Material(
+            color: Colors.transparent,
+            child: Card(
+              child: InkWell(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const SensorsScreen(),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.thermostat,
-                          color: AppColors.error,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Température',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(height: 4),
-                            TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0, end: temp),
-                              duration: const Duration(milliseconds: 800),
-                              builder: (context, value, child) {
-                                return Text(
-                                  '${value.toStringAsFixed(1)}°C',
-                                  style: const TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
+                            child: Icon(
+                              Icons.thermostat,
+                              color: AppColors.error,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Température',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
                                   ),
-                                );
-                              },
+                                ),
+                                const SizedBox(height: 4),
+                                TweenAnimationBuilder<double>(
+                                  tween: Tween(begin: 0, end: temp),
+                                  duration: const Duration(milliseconds: 800),
+                                  builder: (context, value, child) {
+                                    return Text(
+                                      '${value.toStringAsFixed(1)}°C',
+                                      style: const TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: Colors.grey[400],
+                          ),
+                        ],
                       ),
-                      Icon(
-                        Icons.chevron_right,
-                        color: Colors.grey[400],
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: (temp / 50).clamp(0, 1),
+                          minHeight: 8,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _getTemperatureColor(temp),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: (temp / 50).clamp(0, 1),
-                      minHeight: 8,
-                      backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        _getTemperatureColor(temp),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

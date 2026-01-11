@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/sensor_provider.dart';
 import '../../../providers/led_provider.dart';
 import '../../../providers/settings_provider.dart';
+import '../../widgets/animated_card.dart';
 import '../../widgets/temperature_card.dart';
 import '../../widgets/light_card.dart';
 import '../../widgets/led_control_card.dart';
@@ -11,6 +12,7 @@ import '../sensors/sensors_screen.dart';
 import '../led_control/led_control_screen.dart';
 import '../settings/settings_screen.dart';
 import '../statistics/statistics_screen.dart';
+import '../../../core/utils/page_transitions.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -125,13 +127,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
 
           // ✅ NOUVEAU : Bouton History
+          // ✅ NOUVEAU : Bouton History
           IconButton(
             icon: const Icon(Icons.history),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const HistoryScreen(),
-                ),
+                SlideRightRoute(page: const HistoryScreen()),
               );
             },
             tooltip: 'Historique',
@@ -195,9 +196,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: FloatingActionButton.extended(
           onPressed: () {
             Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const SensorsScreen(),
-              ),
+              ScaleRoute(page: const SensorsScreen()),
             );
           },
           icon: const Icon(Icons.sensors),
@@ -247,9 +246,7 @@ class DashboardTab extends StatelessWidget {
                       TextButton.icon(
                         onPressed: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const SensorsScreen(),
-                            ),
+                            FadeRoute(page: const SensorsScreen()),
                           );
                         },
                         icon: const Icon(Icons.arrow_forward, size: 18),
@@ -259,13 +256,18 @@ class DashboardTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Temperature Card
-                  const TemperatureCard(),
+                  // Temperature Card avec animation
+                  AnimatedCard(
+                    delay: 0,
+                    child: const TemperatureCard(),
+                  ),
                   const SizedBox(height: 12),
 
-                  // Light Card
-                  const LightCard(),
-                  const SizedBox(height: 20),
+// Light Card avec animation
+                  AnimatedCard(
+                    delay: 100,
+                    child: const LightCard(),
+                  ),
 
                   // LED Control
                   Text(
