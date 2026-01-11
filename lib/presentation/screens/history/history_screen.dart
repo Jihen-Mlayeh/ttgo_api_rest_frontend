@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'dart:math';
+import '../../../data/services/csv_export_service.dart';
+import '../../widgets/export_dialog.dart';
 import '../../widgets/timeline_item.dart';
 import '../../../data/models/history_event.dart';
 
@@ -17,7 +18,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   EventType? _filterType;
   DateTime? _filterDate;
 
-  // Données de test (mock)
   late List<HistoryEvent> _events;
 
   @override
@@ -31,9 +31,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final now = DateTime.now();
 
     _events = List.generate(30, (index) {
-      final types = EventType.values;
-      final type = types[random.nextInt(types.length)];
-      final timestamp = now.subtract(Duration(hours: index * 2 + random.nextInt(2)));
+      final type = EventType.values[random.nextInt(EventType.values.length)];
+      final timestamp =
+      now.subtract(Duration(hours: index * 2 + random.nextInt(2)));
 
       return HistoryEvent(
         id: 'event_$index',
@@ -68,18 +68,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _getDescriptionForType(EventType type, Random random) {
     switch (type) {
       case EventType.temperature:
-        final temp = (20 + random.nextDouble() * 15).toStringAsFixed(1);
-        return 'Température mesurée : $temp°C';
+        return 'Température mesurée : ${(20 + random.nextDouble() * 15).toStringAsFixed(1)}°C';
       case EventType.light:
-        final light = 30 + random.nextInt(70);
-        return 'Luminosité mesurée : $light%';
+        return 'Luminosité mesurée : ${30 + random.nextInt(70)}%';
       case EventType.ledOn:
         return 'La LED a été allumée';
       case EventType.ledOff:
         return 'La LED a été éteinte';
       case EventType.modeChange:
-        final modes = ['MANUEL', 'AUTO-TEMP', 'AUTO-LIGHT'];
-        return 'Mode changé vers ${modes[random.nextInt(modes.length)]}';
+        return 'Mode changé';
       case EventType.thresholdChange:
         return 'Les seuils ont été modifiés';
     }
@@ -88,26 +85,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Map<String, dynamic>? _getDataForType(EventType type, Random random) {
     switch (type) {
       case EventType.temperature:
-        return {
-          'value': (20 + random.nextDouble() * 15).toStringAsFixed(1),
-          'unit': '°C',
-        };
+        return {'value': 20 + random.nextDouble() * 15, 'unit': '°C'};
       case EventType.light:
-        return {
-          'value': 30 + random.nextInt(70),
-          'unit': '%',
-        };
-      case EventType.modeChange:
-        final modes = ['MANUEL', 'AUTO-TEMP', 'AUTO-LIGHT'];
-        return {
-          'old_mode': modes[random.nextInt(modes.length)],
-          'new_mode': modes[random.nextInt(modes.length)],
-        };
-      case EventType.thresholdChange:
-        return {
-          'temperature': (20 + random.nextDouble() * 10).toStringAsFixed(1),
-          'light': 30 + random.nextInt(70),
-        };
+        return {'value': 30 + random.nextInt(70), 'unit': '%'};
       default:
         return null;
     }
@@ -122,118 +102,61 @@ class _HistoryScreenState extends State<HistoryScreen> {
         title: const Text('Historique & Logs'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: _exportToCsv,
-            tooltip: 'Exporter en CSV',
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.download),
+                tooltip: 'Exporter en CSV',
+                onPressed: _exportToCsv,
+              ),
+              if (filteredEvents.isNotEmpty)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      filteredEvents.length > 99
+                          ? '99+'
+                          : '${filteredEvents.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
       body: Column(
         children: [
-          // Search & Filters
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Search bar
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Rechercher...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = '');
-                      },
-                    )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    setState(() => _searchQuery = value);
-                  },
-                ),
-                const SizedBox(height: 12),
-
-                // Filters
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildFilterChip(
-                        'Tous',
-                        _filterType == null,
-                            () => setState(() => _filterType = null),
-                      ),
-                      const SizedBox(width: 8),
-                      ...EventType.values.map((type) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: _buildFilterChip(
-                            _getEventTypeLabel(type),
-                            _filterType == type,
-                                () => setState(() => _filterType = type),
-                          ),
-                        );
-                      }).toList(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Timeline
+          _buildSearchAndFilters(),
           Expanded(
             child: filteredEvents.isEmpty
-                ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.history,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Aucun événement trouvé',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            )
+                ? _buildEmptyState()
                 : RefreshIndicator(
               onRefresh: () async {
                 await Future.delayed(const Duration(seconds: 1));
-                setState(() => _generateMockEvents());
+                setState(_generateMockEvents);
               },
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: filteredEvents.length,
                 itemBuilder: (context, index) {
-                  final event = filteredEvents[index];
                   return TimelineItem(
-                    event: event,
+                    event: filteredEvents[index],
                     isFirst: index == 0,
                     isLast: index == filteredEvents.length - 1,
                   );
@@ -246,19 +169,74 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
+  Widget _buildSearchAndFilters() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Rechercher...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _searchQuery = '');
+                },
+              )
+                  : null,
+              border:
+              OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onChanged: (value) => setState(() => _searchQuery = value),
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterChip(
+                    'Tous', _filterType == null, () => _filterType = null),
+                const SizedBox(width: 8),
+                ...EventType.values.map(
+                      (type) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _buildFilterChip(
+                      _getEventTypeLabel(type),
+                      _filterType == type,
+                          () => _filterType = type,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(
+      String label, bool selected, VoidCallback onTap) {
     return FilterChip(
       label: Text(label),
-      selected: isSelected,
-      onSelected: (_) => onTap(),
-      backgroundColor: Colors.grey[200],
-      selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-      checkmarkColor: Theme.of(context).colorScheme.primary,
-      labelStyle: TextStyle(
-        color: isSelected
-            ? Theme.of(context).colorScheme.primary
-            : Colors.grey[700],
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      selected: selected,
+      onSelected: (_) => setState(onTap),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.history, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('Aucun événement trouvé'),
+        ],
       ),
     );
   }
@@ -281,40 +259,36 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   List<HistoryEvent> _getFilteredEvents() {
     return _events.where((event) {
-      // Filter by search
-      if (_searchQuery.isNotEmpty) {
-        final query = _searchQuery.toLowerCase();
-        if (!event.title.toLowerCase().contains(query) &&
-            !event.description.toLowerCase().contains(query)) {
-          return false;
-        }
-      }
-
-      // Filter by type
-      if (_filterType != null && event.type != _filterType) {
+      if (_searchQuery.isNotEmpty &&
+          !event.title
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) &&
+          !event.description
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase())) {
         return false;
       }
-
-      // Filter by date
-      if (_filterDate != null) {
-        if (!_isSameDay(event.timestamp, _filterDate!)) {
-          return false;
-        }
-      }
-
+      if (_filterType != null && event.type != _filterType) return false;
+      if (_filterDate != null &&
+          !_isSameDay(event.timestamp, _filterDate!)) return false;
       return true;
     }).toList();
   }
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   void _exportToCsv() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Export CSV : Fonctionnalité en développement'),
-        duration: Duration(seconds: 2),
+    final filteredEvents = _getFilteredEvents();
+    if (filteredEvents.isEmpty) return;
+
+    showDialog(
+      context: context,
+      builder: (_) => ExportDialog(
+        eventCount: filteredEvents.length,
+        onConfirm: () {
+          CsvExportService.exportEventsToCsv(filteredEvents);
+        },
       ),
     );
   }
