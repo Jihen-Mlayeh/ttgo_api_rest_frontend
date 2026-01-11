@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/sensor_provider.dart';
 import '../../core/constants/colors.dart';
+import '../screens/sensors/sensors_screen.dart';
 
 class TemperatureCard extends StatelessWidget {
   const TemperatureCard({super.key});
@@ -15,7 +16,11 @@ class TemperatureCard extends StatelessWidget {
         return Card(
           child: InkWell(
             onTap: () {
-              // Navigation vers détails
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SensorsScreen(),
+                ),
+              );
             },
             borderRadius: BorderRadius.circular(16),
             child: Padding(

@@ -3,9 +3,14 @@ import 'dart:async';
 import '../data/models/sensor_data.dart';
 import '../data/services/api_service.dart';
 import '../data/services/firebase_service.dart';
-
+import '../data/services/mock_api_service.dart';
 class SensorProvider with ChangeNotifier {
-  final ApiService _apiService = ApiService();
+  // POUR TEST SANS ESP32 :
+  final MockApiService _apiService = MockApiService();
+
+// POUR VRAI ESP32 :
+// final ApiService _apiService = ApiService();
+  //final ApiService _apiService = ApiService();
   final FirebaseService _firebaseService = FirebaseService();
 
   SensorData? _currentData;

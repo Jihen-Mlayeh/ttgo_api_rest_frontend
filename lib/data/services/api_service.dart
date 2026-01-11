@@ -5,13 +5,30 @@ import '../../core/constants/api_endpoints.dart';
 
 class ApiService {
   Future<SensorData> getSensorData() async {
-    final response = await http.get(Uri.parse(ApiEndpoints.status));
+    try {
+      final response = await http.get(Uri.parse(ApiEndpoints.status));
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return SensorData.fromJson(data['sensors']);
-    } else {
-      throw Exception('Failed to load sensor data');
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        // Vérifier la structure des données
+        if (data['sensors'] != null) {
+          return SensorData.fromJson(data['sensors']);
+        } else {
+          // Structure alternative (si status retourne directement)
+          return SensorData(
+            temperature: (data['temperature'] ?? 0).toDouble(),
+            lightRaw: data['light_raw'] ?? 0,
+            lightPercent: data['light_percent'] ?? 0,
+            timestamp: DateTime.now(),
+          );
+        }
+      } else {
+        throw Exception('Failed to load sensor data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erreur API getSensorData: $e');
+      throw Exception('Failed to load sensor data: $e');
     }
   }
 
