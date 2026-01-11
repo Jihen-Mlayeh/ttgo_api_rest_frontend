@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/stats_provider.dart';
 import '../../../data/services/firebase_service.dart';
 import '../../../data/models/sensor_data.dart';
 import '../../widgets/temperature_chart.dart';
 import '../../widgets/light_chart.dart';
+import '../../widgets/mode_pie_chart.dart';
+import '../../widgets/led_bar_chart.dart';
+import '../../widgets/animated_card.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -34,7 +39,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: _loadStatistics,
+      onRefresh: () async {
+        await _loadStatistics();
+        context.read<StatsProvider>().refreshStats();
+      },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         physics: const AlwaysScrollableScrollPhysics(),
@@ -53,61 +61,226 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               const Center(child: CircularProgressIndicator())
             else if (_stats != null) ...[
               // Stats cards
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Temp. Moyenne',
-                      '${_stats!['avgTemp'].toStringAsFixed(1)}°C',
-                      Icons.thermostat,
-                      Colors.red,
+              AnimatedCard(
+                delay: 0,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        'Temp. Moyenne',
+                        '${_stats!['avgTemp'].toStringAsFixed(1)}°C',
+                        Icons.thermostat,
+                        Colors.red,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Lumière Moy.',
-                      '${_stats!['avgLight']}%',
-                      Icons.wb_sunny,
-                      Colors.orange,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Lumière Moy.',
+                        '${_stats!['avgLight']}%',
+                        Icons.wb_sunny,
+                        Colors.orange,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Min',
-                      '${_stats!['minTemp'].toStringAsFixed(1)}°C',
-                      Icons.arrow_downward,
-                      Colors.blue,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Max',
-                      '${_stats!['maxTemp'].toStringAsFixed(1)}°C',
-                      Icons.arrow_upward,
-                      Colors.red,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildStatCard(
-                'Nombre de mesures',
-                '${_stats!['count']}',
-                Icons.data_usage,
-                Colors.purple,
-              ),
-              const SizedBox(height: 24),
 
-              // Graphiques
+              AnimatedCard(
+                delay: 100,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        'Min',
+                        '${_stats!['minTemp'].toStringAsFixed(1)}°C',
+                        Icons.arrow_downward,
+                        Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Max',
+                        '${_stats!['maxTemp'].toStringAsFixed(1)}°C',
+                        Icons.arrow_upward,
+                        Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              AnimatedCard(
+                delay: 200,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        'Mesures',
+                        '${_stats!['count']}',
+                        Icons.data_usage,
+                        Colors.purple,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Consumer<StatsProvider>(
+                        builder: (context, stats, _) {
+                          return _buildStatCard(
+                            'Uptime',
+                            stats.uptimeString,
+                            Icons.timer,
+                            Colors.green,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Mode Distribution
               Text(
-                'Graphiques',
+                'Répartition des modes',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              AnimatedCard(
+                delay: 300,
+                child: Consumer<StatsProvider>(
+                  builder: (context, stats, _) {
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: ModePieChart(data: stats.modeData),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // LED Usage
+              Text(
+                'Utilisation LED (24h)',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              AnimatedCard(
+                delay: 400,
+                child: Consumer<StatsProvider>(
+                  builder: (context, stats, _) {
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'LED Active par période',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    'Moy: ${stats.avgLedOnTime.toStringAsFixed(1)}%',
+                                    style: const TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            LedBarChart(data: stats.ledData),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Additional Stats
+              Text(
+                'Statistiques avancées',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              AnimatedCard(
+                delay: 500,
+                child: Consumer<StatsProvider>(
+                  builder: (context, stats, _) {
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            _buildStatRow(
+                              'Changements de mode',
+                              '${stats.totalModeChanges}',
+                              Icons.swap_horiz,
+                              Colors.purple,
+                            ),
+                            const Divider(height: 24),
+                            _buildStatRow(
+                              'Temps LED allumée (moy)',
+                              '${stats.avgLedOnTime.toStringAsFixed(1)}%',
+                              Icons.lightbulb,
+                              Colors.green,
+                            ),
+                            const Divider(height: 24),
+                            _buildStatRow(
+                              'Uptime système',
+                              stats.uptimeString,
+                              Icons.schedule,
+                              Colors.blue,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Graphiques historiques
+              Text(
+                'Graphiques historiques',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -138,12 +311,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                 'Aucune donnée historique',
                                 style: TextStyle(color: Colors.grey[600]),
                               ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Les données apparaîtront ici après quelques minutes',
-                                style: TextStyle(fontSize: 12),
-                                textAlign: TextAlign.center,
-                              ),
                             ],
                           ),
                         ),
@@ -155,9 +322,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
                   return Column(
                     children: [
-                      TemperatureChart(data: data),
+                      AnimatedCard(
+                        delay: 600,
+                        child: TemperatureChart(data: data),
+                      ),
                       const SizedBox(height: 12),
-                      LightChart(data: data),
+                      AnimatedCard(
+                        delay: 700,
+                        child: LightChart(data: data),
+                      ),
                     ],
                   );
                 },
@@ -203,6 +376,36 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildStatRow(String label, String value, IconData icon, Color color) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }

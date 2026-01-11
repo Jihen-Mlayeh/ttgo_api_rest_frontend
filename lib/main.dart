@@ -7,6 +7,7 @@ import 'presentation/screens/splash/splash_screen.dart';
 import 'providers/sensor_provider.dart';
 import 'providers/led_provider.dart';
 import 'providers/settings_provider.dart'; // ✅ AJOUTÉ
+import 'providers/stats_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SensorProvider()),
         ChangeNotifierProvider(create: (_) => LedProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()), // ✅ AJOUTÉ
+        ChangeNotifierProvider(create: (_) => StatsProvider()), // ✅ AJOUTÉ
       ],
       child: Consumer<SettingsProvider>( // ✅ AJOUTÉ
         builder: (context, settings, child) {
