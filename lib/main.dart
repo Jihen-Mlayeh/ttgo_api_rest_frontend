@@ -6,6 +6,7 @@ import 'core/themes/app_theme.dart';
 import 'presentation/screens/splash/splash_screen.dart';
 import 'providers/sensor_provider.dart';
 import 'providers/led_provider.dart';
+import 'providers/settings_provider.dart'; // ✅ AJOUTÉ
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,14 +28,19 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => SensorProvider()),
         ChangeNotifierProvider(create: (_) => LedProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()), // ✅ AJOUTÉ
       ],
-      child: MaterialApp(
-        title: 'TTGO IoT App',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        home: const SplashScreen(),
+      child: Consumer<SettingsProvider>( // ✅ AJOUTÉ
+        builder: (context, settings, child) {
+          return MaterialApp(
+            title: 'TTGO IoT App',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light, // ✅ AJOUTÉ
+            home: const SplashScreen(),
+          );
+        },
       ),
     );
   }

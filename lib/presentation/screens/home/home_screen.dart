@@ -7,6 +7,7 @@ import '../../widgets/light_card.dart';
 import '../../widgets/led_control_card.dart';
 import '../sensors/sensors_screen.dart';
 import '../led_control/led_control_screen.dart';
+import '../settings/settings_screen.dart';
 import '../statistics/statistics_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -50,9 +51,14 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              // Navigation vers Settings
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const SettingsScreen(),
+                ),
+              );
             },
           ),
+
         ],
       ),
       body: screens[_currentIndex],

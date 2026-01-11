@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../data/models/sensor_data.dart';
 import '../data/services/api_service.dart';
+import '../data/services/firebase_service.dart';
 
 class SensorProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
+  final FirebaseService _firebaseService = FirebaseService();
 
   SensorData? _currentData;
   bool _isLoading = false;
   String? _error;
   Timer? _timer;
+  int _fetchCount = 0;
 
   SensorData? get currentData => _currentData;
   bool get isLoading => _isLoading;
@@ -33,6 +36,14 @@ class SensorProvider with ChangeNotifier {
       _error = null;
       final data = await _apiService.getSensorData();
       _currentData = data;
+      _fetchCount++;
+
+      // Sauvegarder dans Firebase toutes les 5 secondes (1 fois sur 3 si polling = 2s)
+      if (_fetchCount % 3 == 0) {
+        await _firebaseService.saveSensorData(data);
+        await _firebaseService.addToHistory(data);
+      }
+
       notifyListeners();
     } catch (e) {
       _error = e.toString();
