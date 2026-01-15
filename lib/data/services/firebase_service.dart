@@ -4,13 +4,9 @@ import '../models/sensor_data.dart';
 class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Collection pour les données en temps réel
   final String _sensorsCollection = 'sensors';
-
-  // Collection pour l'historique
   final String _historyCollection = 'history';
 
-  // Sauvegarder les données actuelles
   Future<void> saveSensorData(SensorData data) async {
     try {
       await _firestore
@@ -22,7 +18,6 @@ class FirebaseService {
     }
   }
 
-  // Ajouter à l'historique
   Future<void> addToHistory(SensorData data) async {
     try {
       await _firestore
@@ -33,7 +28,6 @@ class FirebaseService {
     }
   }
 
-  // Récupérer l'historique des dernières 24h
   Stream<List<SensorData>> getHistory24h() {
     final now = DateTime.now();
     final yesterday = now.subtract(const Duration(hours: 24));
@@ -52,12 +46,13 @@ class FirebaseService {
           lightRaw: data['lightRaw'] as int,
           lightPercent: data['lightPercent'] as int,
           timestamp: (data['timestamp'] as Timestamp).toDate(),
+          ledState: data['ledState'] as bool?,
+          mode: data['mode'] as String?,
         );
       }).toList();
     });
   }
 
-  // Récupérer les statistiques
   Future<Map<String, dynamic>> getStatistics() async {
     try {
       final now = DateTime.now();

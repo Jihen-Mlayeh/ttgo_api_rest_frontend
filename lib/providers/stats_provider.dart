@@ -1,64 +1,177 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'dart:async';
+import '../data/services/firebase_service.dart';
+import '../data/models/sensor_data.dart';
 
 class StatsProvider with ChangeNotifier {
+  final FirebaseService _firebaseService = FirebaseService();
+
   DateTime _startTime = DateTime.now();
+  Timer? _timer;
 
-  // Données de mode (mock)
-  Map<String, double> _modeData = {
-    'MANUEL': 45.0,
-    'AUTO-TEMP': 35.0,
-    'AUTO-LIGHT': 20.0,
-  };
+  List<Map<String, dynamic>> _modeData = [];
+  List<Map<String, dynamic>> _ledData = [];
+  int _totalModeChanges = 0;
+  double _avgLedOnTime = 0.0;
 
-  // Données LED par heure (mock - 7 périodes de 4h)
-  List<double> _ledData = [65, 45, 30, 55, 70, 80, 60];
-
-  // Stats
-  int _totalModeChanges = 42;
-  double _avgLedOnTime = 65.5;
-
-  Map<String, double> get modeData => _modeData;
-  List<double> get ledData => _ledData;
+  List<Map<String, dynamic>> get modeData => _modeData;
+  List<Map<String, dynamic>> get ledData => _ledData;
   int get totalModeChanges => _totalModeChanges;
   double get avgLedOnTime => _avgLedOnTime;
 
-  Duration get uptime => DateTime.now().difference(_startTime);
-
   String get uptimeString {
-    final duration = uptime;
+    final duration = DateTime.now().difference(_startTime);
     final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
+    final minutes = duration.inMinutes % 60;
+    final seconds = duration.inSeconds % 60;
+    return '${hours}h ${minutes}m ${seconds}s';
+  }
 
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    } else if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
-    } else {
-      return '${seconds}s';
+  StatsProvider() {
+    _startTimer();
+    _loadStats();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      notifyListeners();
+    });
+  }
+
+  Future<void> _loadStats() async {
+    await _calculateStats();
+  }
+
+  Future<void> refreshStats() async {
+    await _calculateStats();
+  }
+
+  Future<void> _calculateStats() async {
+    try {
+      final history = await _firebaseService.getHistory24h().first;
+
+      if (history.isEmpty) {
+        _setDefaultData();
+        notifyListeners();
+        return;
+      }
+
+      _calculateModeDistribution(history);
+      _calculateLedUsage(history);
+      _calculateModeChanges(history);
+      _calculateAvgLedTime(history);
+
+      notifyListeners();
+    } catch (e) {
+      print('Erreur calcul stats: $e');
+      _setDefaultData();
+      notifyListeners();
     }
   }
 
-  void refreshStats() {
-    // Simuler de nouvelles données
-    final random = Random();
+  void _calculateModeDistribution(List<SensorData> history) {
+    final Map<String, int> modeCounts = {};
 
-    // Garder les totaux à 100%
-    final m = 20 + random.nextDouble() * 40;
-    final at = 20 + random.nextDouble() * 30;
-    final al = 100 - m - at;
+    for (var data in history) {
+      final mode = data.mode ?? 'MANUEL';
+      modeCounts[mode] = (modeCounts[mode] ?? 0) + 1;
+    }
 
-    _modeData = {
-      'MANUEL': m,
-      'AUTO-TEMP': at,
-      'AUTO-LIGHT': al,
+    final total = history.length;
+
+    _modeData = [
+      {
+        'mode': 'MANUEL',
+        'value': ((modeCounts['MANUEL'] ?? 0) / total * 100).round(),
+        'color': Colors.blue,
+      },
+      {
+        'mode': 'AUTO-TEMP',
+        'value': ((modeCounts['AUTO-TEMP'] ?? 0) / total * 100).round(),
+        'color': Colors.red,
+      },
+      {
+        'mode': 'AUTO-LIGHT',
+        'value': ((modeCounts['AUTO-LIGHT'] ?? 0) / total * 100).round(),
+        'color': Colors.orange,
+      },
+    ];
+  }
+
+  void _calculateLedUsage(List<SensorData> history) {
+    final periods = ['0h', '4h', '8h', '12h', '16h', '20h', '24h'];
+    final Map<String, List<bool>> periodData = {
+      for (var p in periods) p: []
     };
 
-    _ledData = List.generate(7, (_) => 20 + random.nextDouble() * 60);
-    _totalModeChanges = 30 + random.nextInt(30);
-    _avgLedOnTime = 50 + random.nextDouble() * 30;
+    for (var data in history) {
+      final hour = data.timestamp.hour;
+      final periodIndex = (hour ~/ 4).clamp(0, 5);
+      final period = periods[periodIndex];
+      periodData[period]!.add(data.ledState ?? false);
+    }
 
-    notifyListeners();
+    _ledData = periods.map((period) {
+      final states = periodData[period]!;
+      if (states.isEmpty) return {'period': period, 'value': 0};
+
+      final onCount = states.where((s) => s).length;
+      final percentage = (onCount / states.length * 100).round();
+
+      return {'period': period, 'value': percentage};
+    }).toList();
+  }
+
+  void _calculateModeChanges(List<SensorData> history) {
+    if (history.length < 2) {
+      _totalModeChanges = 0;
+      return;
+    }
+
+    int changes = 0;
+    for (int i = 1; i < history.length; i++) {
+      if (history[i].mode != history[i - 1].mode) {
+        changes++;
+      }
+    }
+
+    _totalModeChanges = changes;
+  }
+
+  void _calculateAvgLedTime(List<SensorData> history) {
+    if (history.isEmpty) {
+      _avgLedOnTime = 0.0;
+      return;
+    }
+
+    final onCount = history.where((d) => d.ledState == true).length;
+    _avgLedOnTime = (onCount / history.length * 100);
+  }
+
+  void _setDefaultData() {
+    _modeData = [
+      {'mode': 'MANUEL', 'value': 0, 'color': Colors.blue},
+      {'mode': 'AUTO-TEMP', 'value': 0, 'color': Colors.red},
+      {'mode': 'AUTO-LIGHT', 'value': 0, 'color': Colors.orange},
+    ];
+
+    _ledData = [
+      {'period': '0h', 'value': 0},
+      {'period': '4h', 'value': 0},
+      {'period': '8h', 'value': 0},
+      {'period': '12h', 'value': 0},
+      {'period': '16h', 'value': 0},
+      {'period': '20h', 'value': 0},
+      {'period': '24h', 'value': 0},
+    ];
+
+    _totalModeChanges = 0;
+    _avgLedOnTime = 0.0;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 }

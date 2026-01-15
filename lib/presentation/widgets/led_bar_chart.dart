@@ -2,12 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class LedBarChart extends StatelessWidget {
-  final List<double> data;
+  final List<Map<String, dynamic>> data;
 
-  const LedBarChart({super.key, required this.data});
+  const LedBarChart({
+    super.key,
+    required this.data,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (data.isEmpty) {
+      return const SizedBox(
+        height: 200,
+        child: Center(
+          child: Text('Aucune donnée disponible'),
+        ),
+      );
+    }
+
     return SizedBox(
       height: 200,
       child: BarChart(
@@ -18,8 +30,10 @@ class LedBarChart extends StatelessWidget {
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                final period = data[groupIndex]['period'] as String;
+                final value = (data[groupIndex]['value'] as num).toDouble();
                 return BarTooltipItem(
-                  '${rod.toY.toInt()}%',
+                  '$period\n$value%',
                   const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -30,32 +44,24 @@ class LedBarChart extends StatelessWidget {
           ),
           titlesData: FlTitlesData(
             show: true,
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (value, meta) {
-                  const hours = [
-                    '0h', '4h', '8h', '12h', '16h', '20h', '24h'
-                  ];
-                  if (value.toInt() >= 0 && value.toInt() < hours.length) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < data.length) {
                     return Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
-                        hours[value.toInt()],
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 10,
+                        data[index]['period'] as String,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     );
                   }
-                  return const SizedBox();
+                  return const Text('');
                 },
               ),
             ),
@@ -66,20 +72,22 @@ class LedBarChart extends StatelessWidget {
                 getTitlesWidget: (value, meta) {
                   return Text(
                     '${value.toInt()}%',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 10,
-                    ),
+                    style: const TextStyle(fontSize: 10),
                   );
                 },
               ),
             ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
-          borderData: FlBorderData(show: false),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
-            horizontalInterval: 25,
+            horizontalInterval: 20,
             getDrawingHorizontalLine: (value) {
               return FlLine(
                 color: Colors.grey[300],
@@ -87,28 +95,29 @@ class LedBarChart extends StatelessWidget {
               );
             },
           ),
-          barGroups: data.asMap().entries.map((entry) {
+          borderData: FlBorderData(show: false),
+          barGroups: List.generate(data.length, (index) {
+            final value = (data[index]['value'] as num).toDouble();
             return BarChartGroupData(
-              x: entry.key,
+              x: index,
               barRods: [
                 BarChartRodData(
-                  toY: entry.value,
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.green.shade400,
-                      Colors.green.shade700,
-                    ],
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
+                  toY: value,
+                  color: Colors.green,
+                  width: 20,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(6),
+                    topRight: Radius.circular(6),
                   ),
-                  width: 16,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(4),
+                  backDrawRodData: BackgroundBarChartRodData(
+                    show: true,
+                    toY: 100,
+                    color: Colors.grey[200],
                   ),
                 ),
               ],
             );
-          }).toList(),
+          }),
         ),
       ),
     );
