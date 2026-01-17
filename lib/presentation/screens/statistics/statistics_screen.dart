@@ -25,6 +25,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   void initState() {
     super.initState();
     _loadStatistics();
+    // ✅ NOUVEAU : Charger les stats du provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StatsProvider>().refreshStats();
+    });
   }
 
   Future<void> _loadStatistics() async {
@@ -41,7 +45,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return RefreshIndicator(
       onRefresh: () async {
         await _loadStatistics();
-        context.read<StatsProvider>().refreshStats();
+        await context.read<StatsProvider>().refreshStats();
       },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -157,6 +161,31 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 delay: 300,
                 child: Consumer<StatsProvider>(
                   builder: (context, stats, _) {
+                    // ✅ VÉRIFIE SI LES DONNÉES SONT VIDES
+                    if (stats.modeData.isEmpty) {
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(40),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.pie_chart,
+                                  size: 48,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Aucune donnée disponible',
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
                     return Card(
                       child: Padding(
                         padding: const EdgeInsets.all(20),
@@ -182,6 +211,31 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 delay: 400,
                 child: Consumer<StatsProvider>(
                   builder: (context, stats, _) {
+                    // ✅ VÉRIFIE SI LES DONNÉES SONT VIDES
+                    if (stats.ledData.isEmpty) {
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(40),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.bar_chart,
+                                  size: 48,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Aucune donnée disponible',
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
                     return Card(
                       child: Padding(
                         padding: const EdgeInsets.all(20),
@@ -311,6 +365,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                 'Aucune donnée historique',
                                 style: TextStyle(color: Colors.grey[600]),
                               ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Les données seront disponibles après quelques minutes',
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ],
                           ),
                         ),
@@ -342,7 +405,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -379,7 +443,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildStatRow(String label, String value, IconData icon, Color color) {
+  Widget _buildStatRow(
+      String label, String value, IconData icon, Color color) {
     return Row(
       children: [
         Container(

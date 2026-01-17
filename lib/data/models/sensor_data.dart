@@ -3,14 +3,16 @@ class SensorData {
   final int lightRaw;
   final int lightPercent;
   final DateTime timestamp;
-  final bool? ledState; // ✅ NOUVEAU
+  final bool? ledState;
+  final String? mode;
 
   SensorData({
     required this.temperature,
     required this.lightRaw,
     required this.lightPercent,
     required this.timestamp,
-    this.ledState, // ✅ NOUVEAU (optionnel)
+    this.ledState,
+    this.mode,
   });
 
   factory SensorData.fromJson(Map<String, dynamic> json) {
@@ -19,7 +21,8 @@ class SensorData {
       lightRaw: json['light_raw'] ?? 0,
       lightPercent: json['light_percent'] ?? 0,
       timestamp: DateTime.now(),
-      ledState: json['led'], // ✅ NOUVEAU
+      ledState: json['led'],
+      mode: json['mode'],
     );
   }
 
@@ -29,7 +32,8 @@ class SensorData {
       'light_raw': lightRaw,
       'light_percent': lightPercent,
       'timestamp': timestamp.millisecondsSinceEpoch,
-      'led': ledState, // ✅ NOUVEAU
+      'led': ledState,
+      'mode': mode,
     };
   }
 
@@ -39,7 +43,8 @@ class SensorData {
       'lightRaw': lightRaw,
       'lightPercent': lightPercent,
       'timestamp': timestamp,
-      // Ne pas sauvegarder ledState dans Firestore (optionnel)
+      'ledState': ledState,
+      'mode': mode,
     };
   }
 }

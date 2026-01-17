@@ -30,7 +30,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    // Animation FAB
     _fabController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -41,15 +40,47 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
     _fabController.forward();
 
-    // Démarrer le polling des données
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SensorProvider>().startPolling();
-      context.read<SettingsProvider>().loadSettings();
+      final sensorProvider = context.read<SensorProvider>();
+      final settings = context.read<SettingsProvider>();
+
+      // ✅ Configure le contexte et les notifications
+      sensorProvider.setContext(context);
+      sensorProvider.setNotificationsEnabled(settings.notificationsEnabled);
+
+      // ✅ Synchronise les paramètres
+      sensorProvider.updateSettings(
+        settings.currentMode,
+        settings.temperatureThreshold,
+        settings.lightThreshold,
+      );
+
+      // ✅ Charge les paramètres et démarre le polling
+      settings.loadSettings();
+      sensorProvider.startPolling();
+
+      // ✅ Écoute les changements de paramètres
+      settings.addListener(_onSettingsChanged);
     });
+  }
+
+  // ✅ Callback quand les paramètres changent
+  void _onSettingsChanged() {
+    final sensorProvider = context.read<SensorProvider>();
+    final settings = context.read<SettingsProvider>();
+
+    sensorProvider.updateSettings(
+      settings.currentMode,
+      settings.temperatureThreshold,
+      settings.lightThreshold,
+    );
+
+    sensorProvider.setNotificationsEnabled(settings.notificationsEnabled);
   }
 
   @override
   void dispose() {
+    context.read<SettingsProvider>().removeListener(_onSettingsChanged);
     _fabController.dispose();
     context.read<SensorProvider>().stopPolling();
     super.dispose();
@@ -69,7 +100,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         centerTitle: true,
         elevation: 0,
         actions: [
-          // Bouton Refresh avec animation
           ScaleTransition(
             scale: _fabAnimation,
             child: IconButton(
@@ -82,8 +112,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               tooltip: 'Rafraîchir',
             ),
           ),
-
-          // Indicateur Firebase
           Consumer<SettingsProvider>(
             builder: (context, settings, _) {
               if (settings.firebaseEnabled) {
@@ -125,9 +153,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               return const SizedBox.shrink();
             },
           ),
-
-          // ✅ NOUVEAU : Bouton History
-          // ✅ NOUVEAU : Bouton History
           IconButton(
             icon: const Icon(Icons.history),
             onPressed: () {
@@ -137,8 +162,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             },
             tooltip: 'Historique',
           ),
-
-          // Bouton Settings
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -146,7 +169,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 PageRouteBuilder(
                   pageBuilder: (context, animation, secondaryAnimation) =>
                   const SettingsScreen(),
-                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  transitionsBuilder:
+                      (context, animation, secondaryAnimation, child) {
                     return SlideTransition(
                       position: Tween<Offset>(
                         begin: const Offset(1, 0),
@@ -209,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 }
 
-// Dashboard Tab
+// Le reste du code (DashboardTab, etc.) reste identique à votre version actuelle
 class DashboardTab extends StatelessWidget {
   const DashboardTab({super.key});
 
@@ -225,21 +249,17 @@ class DashboardTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Status Card amélioré
                   _buildEnhancedStatusCard(context),
                   const SizedBox(height: 20),
-
-                  // Mode actuel
                   _buildModeCard(context),
                   const SizedBox(height: 20),
-
-                  // Sensors Section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         'Capteurs',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        style:
+                        Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -255,21 +275,16 @@ class DashboardTab extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  // Temperature Card avec animation
                   AnimatedCard(
                     delay: 0,
                     child: const TemperatureCard(),
                   ),
                   const SizedBox(height: 12),
-
-// Light Card avec animation
                   AnimatedCard(
                     delay: 100,
                     child: const LightCard(),
                   ),
-
-                  // LED Control
+                  const SizedBox(height: 20),
                   Text(
                     'Contrôle LED',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -277,12 +292,8 @@ class DashboardTab extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-
                   const LedControlCard(),
-
                   const SizedBox(height: 20),
-
-                  // Quick stats
                   _buildQuickStats(context),
                 ],
               ),
@@ -322,7 +333,6 @@ class DashboardTab extends StatelessWidget {
                     padding: const EdgeInsets.all(20),
                     child: Row(
                       children: [
-                        // Animated dot
                         TweenAnimationBuilder<double>(
                           duration: const Duration(milliseconds: 1000),
                           tween: Tween(begin: 0.8, end: 1.2),
@@ -334,7 +344,8 @@ class DashboardTab extends StatelessWidget {
                                 width: 16,
                                 height: 16,
                                 decoration: BoxDecoration(
-                                  color: isConnected ? Colors.green : Colors.red,
+                                  color:
+                                  isConnected ? Colors.green : Colors.red,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
@@ -349,9 +360,6 @@ class DashboardTab extends StatelessWidget {
                               ),
                             );
                           },
-                          onEnd: () {
-                            // Repeat animation
-                          },
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -359,7 +367,9 @@ class DashboardTab extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isConnected ? 'Système en ligne' : 'Système hors ligne',
+                                isConnected
+                                    ? 'Système en ligne'
+                                    : 'Système hors ligne',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
@@ -524,20 +534,22 @@ class DashboardTab extends StatelessWidget {
                 Expanded(
                   child: _buildStatCard(
                     'Lectures',
-                    '${provider.currentData != null ? "Active" : "0"}',
+                    'Active',
                     Icons.update,
                     Colors.purple,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Consumer<LedProvider>(
-                    builder: (context, led, _) {
+                  child: Builder(
+                    builder: (context) {
+                      final ledState = data.ledState ?? false;
+
                       return _buildStatCard(
                         'LED',
-                        led.isOn ? 'ON' : 'OFF',
+                        ledState ? 'ON' : 'OFF',
                         Icons.lightbulb,
-                        led.isOn ? Colors.green : Colors.grey,
+                        ledState ? Colors.green : Colors.grey,
                       );
                     },
                   ),
@@ -550,7 +562,8 @@ class DashboardTab extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String label, String value, IconData icon, Color color) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),

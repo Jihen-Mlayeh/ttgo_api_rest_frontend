@@ -17,7 +17,7 @@ class ApiService {
             lightRaw: data['sensors']['light_raw'] ?? 0,
             lightPercent: data['sensors']['light_percent'] ?? 0,
             timestamp: DateTime.now(),
-            ledState: data['actuators']?['led'] as bool?,
+            ledState: data['actuators']?['led'] as bool?, // ✅ NOUVEAU
           );
         }
 
@@ -30,7 +30,7 @@ class ApiService {
       throw Exception('Failed to load sensor data: $e');
     }
   }
-  //  Lire l'état de la LED
+  // ✅ NOUVEAU : Lire l'état de la LED
   Future<bool> getLedState() async {
     try {
       final response = await http.get(Uri.parse(ApiEndpoints.status));

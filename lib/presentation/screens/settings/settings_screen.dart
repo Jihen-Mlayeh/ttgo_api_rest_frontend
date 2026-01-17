@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../providers/sensor_provider.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/api_endpoints.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,31 +36,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // Section Mode
               _buildSectionHeader('Mode de fonctionnement', Icons.settings_suggest),
               const SizedBox(height: 12),
               _buildModeSection(settings),
               const SizedBox(height: 24),
 
-              // Section Seuils
               _buildSectionHeader('Seuils d\'activation', Icons.tune),
               const SizedBox(height: 12),
               _buildThresholdsSection(settings),
               const SizedBox(height: 24),
 
-              // Section Configuration
               _buildSectionHeader('Configuration', Icons.settings),
               const SizedBox(height: 12),
               _buildConfigSection(settings),
               const SizedBox(height: 24),
 
-              // Section Firebase
               _buildSectionHeader('Synchronisation', Icons.cloud),
               const SizedBox(height: 12),
               _buildFirebaseSection(settings),
               const SizedBox(height: 24),
 
-              // Section Apparence
               _buildSectionHeader('Apparence', Icons.palette),
               const SizedBox(height: 12),
               _buildAppearanceSection(settings),
@@ -86,7 +82,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Section Mode
   Widget _buildModeSection(SettingsProvider settings) {
     return Card(
       child: Padding(
@@ -94,38 +89,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildModeOption(
-              settings,
-              'MANUEL',
-              'Contrôle manuel de la LED',
-              Icons.touch_app,
-            ),
+            _buildModeOption(settings, 'MANUEL', 'Contrôle manuel de la LED', Icons.touch_app),
             const Divider(height: 24),
-            _buildModeOption(
-              settings,
-              'AUTO-TEMP',
-              'LED s\'allume si température > seuil',
-              Icons.thermostat,
-            ),
+            _buildModeOption(settings, 'AUTO-TEMP', 'LED s\'allume si température > seuil', Icons.thermostat),
             const Divider(height: 24),
-            _buildModeOption(
-              settings,
-              'AUTO-LIGHT',
-              'LED s\'allume si luminosité < seuil',
-              Icons.wb_sunny,
-            ),
+            _buildModeOption(settings, 'AUTO-LIGHT', 'LED s\'allume si luminosité < seuil', Icons.wb_sunny),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildModeOption(
-      SettingsProvider settings,
-      String mode,
-      String description,
-      IconData icon,
-      ) {
+  Widget _buildModeOption(SettingsProvider settings, String mode, String description, IconData icon) {
     final isSelected = settings.currentMode == mode;
 
     return InkWell(
@@ -134,9 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withOpacity(0.1)
-              : Colors.transparent,
+          color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primary : Colors.transparent,
@@ -148,9 +121,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary
-                    : Colors.grey.withOpacity(0.2),
+                color: isSelected ? AppColors.primary : Colors.grey.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -175,26 +146,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
               ),
             ),
-            if (isSelected)
-              Icon(
-                Icons.check_circle,
-                color: AppColors.primary,
-              ),
+            if (isSelected) Icon(Icons.check_circle, color: AppColors.primary),
           ],
         ),
       ),
     );
   }
 
-  // Section Seuils
   Widget _buildThresholdsSection(SettingsProvider settings) {
     return Card(
       child: Padding(
@@ -202,29 +165,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Seuil température
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Température',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                const Text('Température', style: TextStyle(fontWeight: FontWeight.bold)),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.error.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '${settings.tempThreshold.toStringAsFixed(1)}°C',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.error,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error),
                   ),
                 ),
               ],
@@ -238,30 +191,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (value) => settings.setTempThreshold(value),
             ),
             const SizedBox(height: 20),
-
-            // Seuil lumière
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Lumière',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                const Text('Lumière', style: TextStyle(fontWeight: FontWeight.bold)),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.warning.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '${settings.lightThreshold}%',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.warning,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.warning),
                   ),
                 ),
               ],
@@ -275,8 +217,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (value) => settings.setLightThreshold(value.toInt()),
             ),
             const SizedBox(height: 16),
-
-            // Bouton Appliquer
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -296,7 +236,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Section Configuration
   Widget _buildConfigSection(SettingsProvider settings) {
     return Card(
       child: Column(
@@ -309,12 +248,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () async {
               final prefs = await SharedPreferences.getInstance();
               await prefs.remove('esp32_ip');
-
               if (mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (_) => const ConnectionScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const ConnectionScreen()),
                       (route) => false,
                 );
               }
@@ -328,32 +264,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: DropdownButton<int>(
               value: settings.refreshInterval,
               items: [1, 2, 5, 10].map((seconds) {
-                return DropdownMenuItem(
-                  value: seconds,
-                  child: Text('${seconds}s'),
-                );
+                return DropdownMenuItem(value: seconds, child: Text('${seconds}s'));
               }).toList(),
               onChanged: (value) {
-                if (value != null) {
-                  settings.setRefreshInterval(value);
-                }
+                if (value != null) settings.setRefreshInterval(value);
               },
             ),
           ),
           const Divider(height: 1),
+          // ✅ CORRECTION ICI : toggleNotifications au lieu de toggleFirebase
           SwitchListTile(
             secondary: const Icon(Icons.notifications),
             title: const Text('Notifications'),
             subtitle: const Text('Alertes pour les seuils dépassés'),
             value: settings.notificationsEnabled,
-            onChanged: settings.toggleNotifications,
+            onChanged: (value) async {
+              await settings.toggleNotifications();
+              // ✨ Synchronise avec le SensorProvider
+              if (mounted) {
+                context.read<SensorProvider>().setNotificationsEnabled(value);
+              }
+            },
           ),
         ],
       ),
     );
   }
 
-  // Section Firebase
   Widget _buildFirebaseSection(SettingsProvider settings) {
     return Card(
       child: Column(
@@ -363,7 +300,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Synchronisation Firebase'),
             subtitle: const Text('Sauvegarde automatique des données'),
             value: settings.firebaseEnabled,
-            onChanged: settings.toggleFirebase,
+            onChanged: (value) => settings.toggleFirebase(),
           ),
           const Divider(height: 1),
           ListTile(
@@ -384,17 +321,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Section Apparence
   Widget _buildAppearanceSection(SettingsProvider settings) {
     return Card(
       child: SwitchListTile(
-        secondary: Icon(
-          settings.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-        ),
+        secondary: Icon(settings.isDarkMode ? Icons.dark_mode : Icons.light_mode),
         title: const Text('Mode sombre'),
         subtitle: const Text('Thème sombre pour l\'application'),
         value: settings.isDarkMode,
-        onChanged: settings.toggleDarkMode,
+        onChanged: (value) => settings.toggleDarkMode(), // ✅ CORRECTION ICI aussi
       ),
     );
   }
